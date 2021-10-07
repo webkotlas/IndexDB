@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>IndexedDB</title>
+</head>
+<body>
+
+<button id = 'btnCreateDB'>Create DB</button>
+<button id = 'btnAddToken'>Add Token</button>
+<button id = 'btnViewNotes'>Get Token</button>
+<button id = 'btnDelete'>Delete Token</button>
+
+<script>
+    const btnCreateDB = document.getElementById("btnCreateDB");
+    const btnAddToken = document.getElementById("btnAddToken");
+    const btnViewNotes = document.getElementById("btnViewNotes");
+    const btnDelete = document.getElementById("btnDelete");
+
+    btnCreateDB.addEventListener("click", createDB);
+    btnAddToken.addEventListener("click", ()=> updateToken('!32jfdsdif*#Rrf'));
+    btnViewNotes.addEventListener("click", getToken);
+    btnDelete.addEventListener("click", deleteToken);
+
+    function getDb() {
+        return indexedDB.open('wkPoster',1);
+    }
+
+    function getToken() {
+        const dbRequest = getDb();
+        dbRequest.onsuccess = (e) => {
+            const db = e.target.result;
+
+            const transaction = db.transaction("settings", "readonly");
+            const objectStore = transaction.objectStore("settings");
+            const request = objectStore.get('token');
+
+            request.onsuccess = e => {
+                const result = e.target.result;
+                console.log('token', result.value);
+            }
+        }
+    }
+    function deleteToken() {
+        const dbRequest = getDb();
+        dbRequest.onsuccess = (e) => {
+            const db = e.target.result;
+            const transaction = db.transaction("settings", "readwrite");
+            const objectStore = transaction.objectStore("settings");
+
+            let request = objectStore.delete('token');
+            if(request.readyState === 'done') console.log('remove token')
+        }
+    }
+    function updateToken(token) {
+        let val = (token) ? token : '';
+        const dbRequest = getDb();
+        dbRequest.onsuccess = (e) => {
+            let db = e.target.result;
+            let tokenOb = {key: "token", value: val};
+
+            let transaction = db.transaction("settings", "readwrite");
+            transaction.onerror = e => alert( ` Error! ${e.target.error}  `);
+            let objectStore = transaction.objectStore("settings");
+
+            let request = objectStore.put(tokenOb);
+            if(request.readyState === 'done') console.log('update token')
+        };
+
+    }
+
+    function createDB () {
+        const dbRequest = getDb();
+        dbRequest.onupgradeneeded = e => {
+            const db = e.target.result;
+            db.createObjectStore("settings", {keyPath: "key"});
+            console.log(`upgrade is called database name: ${db.name} version : ${db.version}`)
+        };
+        dbRequest.onsuccess = e => {
+            const db = e.target.result;
+            console.log(`success is called database name: ${db.name} version : ${db.version}`)
+        };
+        dbRequest.onerror = e => {
+            console.log(`error: ${e.target.error} was found `)
+        }
+    }
+
+</script>
+
+</body>
+</html>
